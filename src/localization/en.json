@@ -1,0 +1,14 @@
+{
+  "auth": {
+    "appName": "Social",
+    "loginWithGoogle": "Log in with Google",
+    "loginWithEmail": "Log in with Email",
+    "or": "OR",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forget Password?",
+    "login": "Log in",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign up"
+  }
+}
