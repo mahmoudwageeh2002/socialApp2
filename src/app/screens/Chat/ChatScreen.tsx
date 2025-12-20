@@ -39,8 +39,17 @@ export default function ChatScreen() {
         text: t('chat.message2'),
         time: t('chat.time1255'),
       },
+      {
+        id: 'm3',
+        side: 'left' as const,
+        time: t('chat.time1255'),
+        audio: {
+          uri: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+          durationMs: 32000,
+        },
+      },
     ],
-    [],
+    [t],
   );
 
   const renderItem = ({ item }: any) => (
@@ -50,6 +59,7 @@ export default function ChatScreen() {
       subtitle={item.subtitle}
       text={item.text}
       time={item.time}
+      audio={item.audio}
     />
   );
 

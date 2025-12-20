@@ -2,13 +2,20 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, spacing } from '../../../../theme';
 import { typography } from '../../../../theme/typography';
+import AudioRow from './AudioRow';
+
+type AudioPayload = {
+  uri: string; // file url or local path
+  durationMs?: number;
+};
 
 type Props = {
   side: 'left' | 'right';
-  title?: string; // for left bubble: sender name + role
-  subtitle?: string; // role
-  text: string;
+  title?: string;
+  subtitle?: string;
+  text?: string;
   time: string;
+  audio?: AudioPayload; // optional audio message
 };
 
 export default function ChatBubble({
@@ -17,8 +24,10 @@ export default function ChatBubble({
   subtitle,
   text,
   time,
+  audio,
 }: Props) {
   const isRight = side === 'right';
+
   return (
     <View style={[styles.container, isRight ? styles.right : styles.left]}>
       <View
@@ -33,9 +42,17 @@ export default function ChatBubble({
             {subtitle ? <Text style={styles.role}>{subtitle}</Text> : null}
           </View>
         ) : null}
-        <Text style={[styles.text, isRight && styles.textOnPrimary]}>
-          {text}
-        </Text>
+
+        {/* Text message */}
+        {text ? (
+          <Text style={[styles.text, isRight && styles.textOnPrimary]}>
+            {text}
+          </Text>
+        ) : null}
+
+        {/* Audio message */}
+        {audio ? <AudioRow isRight={isRight} audio={audio} /> : null}
+
         <Text
           style={[
             styles.time,
@@ -58,6 +75,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
+    // overflow: 'hidden',
   },
   bubbleLeft: {
     backgroundColor: colors.inputBackground,

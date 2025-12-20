@@ -103,9 +103,9 @@ export default function ChatListScreen() {
         </TouchableOpacity>
         <FlatList
           data={data}
-          keyExtractor={i => i.id}
+          // keyExtractor={i => i.id}
           renderItem={renderItem}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          // ItemSeparatorComponent={() => <View style={styles.separator} />}
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         />
