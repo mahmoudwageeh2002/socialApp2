@@ -1,13 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NavigationContainer } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
+import i18n, { loadSavedLanguage } from '../../localization/i18n';
 
 export default function RootNavigator() {
   const [isAuthenticated, setIsAuthenticated] = useState(true);
 
-  // Example: check if token exists
   useEffect(() => {
+    loadSavedLanguage(); // apply persisted language
     const checkAuth = async () => {
       // TODO: get token from secure storage / redux
       const token = null;
@@ -18,7 +20,7 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer>
-      {isAuthenticated ? <MainNavigator /> : <AuthNavigator />}
+      {true ? <MainNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );
 }

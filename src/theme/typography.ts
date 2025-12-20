@@ -45,4 +45,16 @@ export const typography = {
     fontFamily: 'System',
     fontWeight: '600',
   } satisfies TextStyle,
+  bodyBold: {
+    fontSize: 16,
+    lineHeight: 22,
+    fontFamily: 'System',
+    fontWeight: '700',
+  } satisfies TextStyle,
+  h4: {
+    fontSize: 20,
+    lineHeight: 26,
+    fontFamily: 'System',
+    fontWeight: '700',
+  } satisfies TextStyle,
 };

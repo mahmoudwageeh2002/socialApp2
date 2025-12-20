@@ -1,6 +1,12 @@
 {
+  "navigation": {
+    "home": "Home",
+    "search": "Search",
+    "notifications": "Notifications",
+    "profile": "Profile"
+  },
   "auth": {
-    "appName": "Social",
+    "appName": "Sociallawy",
     "loginWithGoogle": "Log in with Google",
     "loginWithEmail": "Log in with Email",
     "or": "OR",
@@ -9,6 +15,79 @@
     "forgotPassword": "Forget Password?",
     "login": "Log in",
     "noAccount": "Don't have an account?",
-    "signUp": "Sign up"
+    "signUp": "Sign up",
+    "signUpWithGoogle": "Sign up with Google",
+    "name": "Name",
+    "username": "Username",
+    "agreeTerms": "I agree to the Terms and Privacy Policy.",
+    "continue": "Continue",
+    "haveAccount": "Have an account?",
+    "logIn": "Log In"
+  },
+  "chat": {
+    "chatsTitle": "Chats",
+    "newMessage": "New Message",
+    "back": "Back",
+    "online": "Online",
+    "messagePlaceholder": "Message ...",
+    "roleMarketingManager": "Marketing Manager",
+    "preview1": "Hi, Robert. I'm facing some challenge ...",
+    "preview2": "I admire your expertise in Java. Any chance ...",
+    "preview3": "Congrats on your recent promotion at DevC ...",
+    "preview4": "Just published a new article on SSR. I thoug ...",
+    "preview5": "Thank you for the insightful post/article! Yo ...",
+    "message1": "Hi, Robert. I'm facing some challenges in optimizing my code for performance. Can you help?",
+    "message2": "Hi, Bessie 👋 I'd be glad to help you with optimizing your code for better performance. To get started, could you provide me with some more details about the specific challenges you're facing?",
+    "time1245": "12:45 PM",
+    "time1255": "12:55 PM"
+  },
+  "profile": {
+    "title": "Profile",
+    "stats": {
+      "posts": "Posts",
+      "followers": "Followers",
+      "following": "Following"
+    },
+    "tabs": {
+      "general": "General",
+      "account": "Account",
+      "actions": "Actions"
+    },
+    "general": {
+      "chooseAvatar": "Choose an image for avatar",
+      "fullName": "Full name",
+      "username": "Username",
+      "bio": "Bio"
+    },
+    "account": {
+      "email": "Email",
+      "phone": "Phone",
+      "joined": "Joined",
+      "plan": "Plan"
+    },
+    "actions": {
+      "logout": "Logout",
+      "deactivate": "Deactivate Account",
+      "changeLanguage": "Change Language"
+    }
+  },
+  "home": {
+    "addPost": {
+      "placeholder": "What's on your mind?",
+      "addMedia": "Add Media",
+      "post": "Post"
+    },
+    "post": {
+      "comment": "Comment",
+      "likes": "Likes",
+      "addComment": "Add a comment..."
+    }
+  },
+  "search": {
+    "title": "Search",
+    "placeholder": "Search..."
+  },
+  "notifications": {
+    "title": "Notifications"
   }
 }

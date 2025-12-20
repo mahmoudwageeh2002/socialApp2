@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * Sample React Native App
  * https://github.com/facebook/react-native
@@ -6,15 +5,20 @@
  * @format
  */
 
-import { useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { NavigationContainer } from '@react-navigation/native';
-import MainNavigator from './src/app/navigation/MainNavigator';
 import RootNavigator from './src/app/navigation/RootNavigator';
+import { useEffect, useState } from 'react';
+import { loadSavedLanguage } from './src/localization/i18n';
 
 function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+  // const isDarkMode = useColorScheme() === 'dark';
+  const [ready, setReady] = useState(false);
 
+  useEffect(() => {
+    loadSavedLanguage().finally(() => setReady(true));
+  }, []);
+
+  if (!ready) return null;
   return (
     <SafeAreaProvider>
       <RootNavigator />

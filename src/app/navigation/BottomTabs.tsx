@@ -6,13 +6,22 @@ import NotificationsStack from './NotificationsStack';
 import ProfileStack from './ProfileStack';
 // @ts-ignore: no declaration file for 'react-native-vector-icons/AntDesign'
 import AntDesign from 'react-native-vector-icons/AntDesign';
+import { colors } from '../../theme';
+import { useTranslation } from 'react-i18next';
 const Tab = createBottomTabNavigator();
 
 export default function BottomTabs() {
+  const { t } = useTranslation();
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }}>
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: colors.main,
+        tabBarInactiveTintColor: '#8E8E93',
+      }}
+    >
       <Tab.Screen
-        name="Home"
+        name={t('navigation.home')}
         component={HomeStack}
         options={{
           tabBarIcon: ({ color, size }) => (
@@ -21,7 +30,7 @@ export default function BottomTabs() {
         }}
       />
       <Tab.Screen
-        name="Search"
+        name={t('navigation.search')}
         component={SearchStack}
         options={{
           tabBarIcon: ({ color, size }) => (
@@ -30,7 +39,7 @@ export default function BottomTabs() {
         }}
       />
       <Tab.Screen
-        name="Notifications"
+        name={t('navigation.notifications')}
         component={NotificationsStack}
         options={{
           tabBarIcon: ({ color, size }) => (
@@ -39,7 +48,7 @@ export default function BottomTabs() {
         }}
       />
       <Tab.Screen
-        name="Profile"
+        name={t('navigation.profile')}
         component={ProfileStack}
         options={{
           tabBarIcon: ({ color, size }) => (

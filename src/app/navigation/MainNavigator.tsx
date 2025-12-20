@@ -1,5 +1,5 @@
-import BottomTabs from './BottomTabs';
+import AppStack from './AppStack';
 
 export default function MainNavigator() {
-  return <BottomTabs />;
+  return <AppStack />;
 }

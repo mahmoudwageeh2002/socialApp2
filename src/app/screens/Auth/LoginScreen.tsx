@@ -1,34 +1,36 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   StyleSheet,
   Text,
   View,
-  Image,
   TouchableOpacity,
   TextInput,
+  ScrollView,
 } from 'react-native';
 import { colors, spacing } from '../../../theme';
 import { typography } from '../../../theme/typography';
-import { t } from '../../../localization';
-import { SafeAreaFrameContext } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import LogoSvg from '../../../assets/svgs/Logomark.svg';
+import GoogleSvg from '../../../assets/svgs/googleSvg.svg';
+import { useNavigation } from '@react-navigation/native';
 const LoginScreen = () => {
+  const { t } = useTranslation();
+  const navigation = useNavigation();
+  const passwordInputRef = useRef<TextInput>(null);
+  const handleEmailSubmit = () => {
+    passwordInputRef.current?.focus();
+  };
   return (
-    <SafeAreaFrameContext value={null}>
+    <ScrollView style={styles.mainContainer}>
       <View style={styles.container}>
         {/* Logo */}
-        {/* <LogoSvg width={48} height={48} style={styles.logo} /> */}
+        <LogoSvg width={48} height={48} style={styles.logo} />
         {/* App name */}
         <Text style={styles.title}>{t('auth.appName')}</Text>
 
         {/* Social buttons */}
         <TouchableOpacity style={styles.socialButton}>
-          <Image
-            source={{
-              uri: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg',
-            }}
-            style={styles.socialIcon}
-          />
+          <GoogleSvg width={24} height={24} style={styles.socialIcon} />
           <Text style={styles.socialText}>{t('auth.loginWithGoogle')}</Text>
         </TouchableOpacity>
 
@@ -46,12 +48,15 @@ const LoginScreen = () => {
           placeholderTextColor={colors.textSecondary}
           keyboardType="email-address"
           autoCapitalize="none"
+          returnKeyType="next"
+          onSubmitEditing={handleEmailSubmit}
         />
         <TextInput
           style={styles.input}
           placeholder={t('auth.password')}
           placeholderTextColor={colors.textSecondary}
           secureTextEntry
+          ref={passwordInputRef}
         />
 
         {/* Forgot password */}
@@ -67,12 +72,14 @@ const LoginScreen = () => {
         {/* Footer */}
         <View style={styles.footerRow}>
           <Text style={styles.footerText}>{t('auth.noAccount')}</Text>
-          <TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Register' as never)}
+          >
             <Text style={styles.footerLink}>{t('auth.signUp')}</Text>
           </TouchableOpacity>
         </View>
       </View>
-    </SafeAreaFrameContext>
+    </ScrollView>
   );
 };
 
@@ -160,6 +167,10 @@ const styles = StyleSheet.create({
   footerLink: {
     ...typography.captionBold,
     color: colors.link,
+  },
+  mainContainer: {
+    backgroundColor: colors.background,
+    paddingTop: 58,
   },
 });
 
