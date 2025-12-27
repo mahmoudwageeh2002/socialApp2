@@ -1,11 +1,13 @@
+/* eslint-disable react-native/no-inline-styles */
 import React from 'react';
-import { FlatList, StyleSheet } from 'react-native';
-import { colors, spacing } from '../../../../theme';
-import PostCard, { Post } from '../../Home/components/PostCard';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { colors, spacing, typography } from '../../../../theme';
+import PostCard from '../../Home/components/PostCard';
+import { PostDoc } from '../../../../types/Post';
 
-type Props = { posts: Post[] };
+type Props = { posts: PostDoc[]; refresh: () => void };
 
-export default function SavedTab({ posts }: Props) {
+export default function SavedTab({ posts, refresh }: Props) {
   return (
     <FlatList
       data={posts}
@@ -13,6 +15,27 @@ export default function SavedTab({ posts }: Props) {
       renderItem={({ item }) => <PostCard post={item} />}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} />}
+      ListEmptyComponent={
+        <View
+          style={{
+            padding: spacing.lg,
+            marginStart: 'auto',
+            marginEnd: 'auto',
+            marginTop: spacing.xxl,
+          }}
+        >
+          <Text
+            style={{
+              ...typography.body,
+              color: colors.textSecondary,
+              textAlign: 'center',
+            }}
+          >
+            No saved posts yet.
+          </Text>
+        </View>
+      }
     />
   );
 }

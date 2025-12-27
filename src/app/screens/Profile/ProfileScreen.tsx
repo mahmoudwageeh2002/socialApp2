@@ -1,5 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { act } from 'react';
+import React, { act, useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View, Text, Image } from 'react-native';
 import { colors, spacing } from '../../../theme';
 import { typography } from '../../../theme/typography';
@@ -8,10 +9,12 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import TabBar, { TabItem } from '../../../components/common/TabBar';
 import PostsTab from './tabs/postsTab';
 import SavedTab from './tabs/savedTab';
+import firestore from '@react-native-firebase/firestore';
 
-import { Post } from '../Home/components/PostCard';
 import { InnerSettings } from './tabs/settteingsTab';
 import { useTranslation } from 'react-i18next';
+import useAuth from '../../../hooks/useAuth';
+import { PostDoc } from '../../../types/Post';
 
 const dummy = {
   avatar: 'https://placehold.co/140x140',
@@ -28,57 +31,93 @@ const ProfileScreen = () => {
     'posts' | 'saved' | 'settings'
   >('posts');
   const { t } = useTranslation();
-  // Dummy posts
-  const posts: Post[] = React.useMemo(
-    () => [
-      {
-        id: 'p1',
-        authorName: 'Robert Fox',
-        authorTitle: 'Software Engineer',
-        authorAvatar: dummy.avatar,
-        timeAgo: '3h',
-        content:
-          "Loving the new UI tweaks I'm working on. Simplicity wins every time! ✨",
-        likes: 42,
-      },
-      {
-        id: 'p2',
-        authorName: 'Robert Fox',
-        authorTitle: 'Software Engineer',
-        authorAvatar: dummy.avatar,
-        timeAgo: '1d',
-        content:
-          'Experimenting with animations in React Native Reanimated. Any tips? 🔧',
-        likes: 87,
-      },
-    ],
-    [],
-  );
+  const { appUser, loading, refresh } = useAuth();
+  const [myPosts, setMyPosts] = useState<PostDoc[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [savedPosts, setSavedPosts] = useState<PostDoc[]>([]);
+  console.log('AppUser in ProfileScreen:', JSON.stringify(appUser, null, 2));
 
-  const saved: Post[] = React.useMemo(
-    () => [
-      {
-        id: 's1',
-        authorName: 'Bessie Cooper',
-        authorTitle: 'Digital Marketer',
-        authorAvatar: 'https://placehold.co/100x100',
-        timeAgo: '5h',
-        content:
-          'Batch creating content has boosted my productivity this week! 📈',
-        likes: 270,
-      },
-      {
-        id: 's2',
-        authorName: 'Daniel Brown',
-        authorTitle: 'Digital Marketer',
-        authorAvatar: 'https://placehold.co/100x100',
-        timeAgo: '2d',
-        content: 'Great design is invisible. Keep iterating. 👏',
-        likes: 58,
-      },
-    ],
-    [],
-  );
+  // Listen to my posts when appUser is available
+  useEffect(() => {
+    if (!appUser?.userId) return;
+    const unsub = firestore()
+      .collection('posts')
+      .where('userId', '==', appUser.userId)
+      .orderBy('createdAt', 'desc')
+      .onSnapshot(
+        snap => {
+          const list: PostDoc[] = snap.docs.map(d => ({
+            ...(d.data() as PostDoc),
+            id: d.id,
+          }));
+          setMyPosts(list);
+        },
+        err => console.warn('My posts listen failed:', err),
+      );
+    return unsub;
+  }, [appUser?.userId]);
+  useEffect(() => {
+    if (!appUser?.userId) return;
+    const unsub = firestore()
+      .collection('posts')
+      .where('saved', '==', true)
+      .onSnapshot(
+        snap => {
+          const list: PostDoc[] = snap.docs.map(d => ({
+            ...(d.data() as PostDoc),
+            id: d.id,
+          }));
+          setSavedPosts(list);
+        },
+        err => console.warn('saved posts listen failed:', err),
+      );
+    return unsub;
+  }, [appUser?.userId]);
+  // Optional manual refresh
+  const fetchMyPostsOnce = useCallback(async () => {
+    if (!appUser?.userId) return;
+    try {
+      const snap = await firestore()
+        .collection('posts')
+        .where('userId', '==', appUser.userId)
+        .orderBy('createdAt', 'desc')
+        .get();
+      const list: PostDoc[] = snap.docs.map(d => ({
+        ...(d.data() as PostDoc),
+        id: d.id,
+      }));
+      setMyPosts(list);
+    } catch (e) {
+      console.warn('Refresh posts failed:', e);
+    }
+  }, [appUser?.userId]);
+  const fetchSavedPosts = useCallback(async () => {
+    if (!appUser?.userId) return;
+    try {
+      const snap = await firestore()
+        .collection('posts')
+        .where('saved', '==', true)
+        .orderBy('createdAt', 'desc')
+        .get();
+      const list: PostDoc[] = snap.docs.map(d => ({
+        ...(d.data() as PostDoc),
+        id: d.id,
+      }));
+      setSavedPosts(list);
+    } catch (e) {
+      console.warn('Refresh saved posts failed:', e);
+    }
+  }, [appUser?.userId]);
+  const onMyPostsRefresh = () => {
+    setRefreshing(true);
+    fetchMyPostsOnce();
+    setRefreshing(false);
+  };
+  const onSavedPostsRefresh = () => {
+    setRefreshing(true);
+    fetchSavedPosts();
+    setRefreshing(false);
+  };
 
   const tabs: TabItem[] = [
     {
@@ -119,7 +158,10 @@ const ProfileScreen = () => {
       <View style={styles.screen}>
         <View style={styles.header}>
           <View style={styles.topRow}>
-            <Image source={{ uri: dummy.avatar }} style={styles.avatar} />
+            <Image
+              source={{ uri: appUser?.imgUrl ?? dummy.avatar }}
+              style={styles.avatar}
+            />
 
             <View style={styles.statsRow}>
               <View style={styles.stat}>
@@ -142,19 +184,25 @@ const ProfileScreen = () => {
           </View>
           <View style={styles.info}>
             <View style={styles.nameRow}>
-              <Text style={styles.name}>{dummy.name}</Text>
-              <Text style={styles.handle}>{` ${dummy.handle}`}</Text>
+              <Text style={styles.name}>{appUser?.name}</Text>
+              <Text style={styles.handle}>{`@${appUser?.username}`}</Text>
             </View>
-            <Text style={styles.bio}>{dummy.bio}</Text>
+            {appUser?.bio && <Text style={styles.bio}>{appUser.bio}</Text>}
           </View>
         </View>
 
         <TabBar tabs={tabs} active={activeTab} setActive={setActiveTab} />
-        {activeTab === 'posts' && <PostsTab posts={posts} />}
-        {activeTab === 'saved' && <SavedTab posts={saved} />}
+        {activeTab === 'posts' && (
+          <PostsTab posts={myPosts} refresh={onMyPostsRefresh} />
+        )}
+        {activeTab === 'saved' && (
+          <SavedTab posts={savedPosts} refresh={onSavedPostsRefresh} />
+        )}
         {activeTab === 'settings' && (
           <View style={styles.settingsWrapper}>
-            <InnerSettings />
+            <InnerSettings appUser={appUser} />
+            {/* Pass callback to refresh after save */}
+            {/* If InnerSettings renders GeneralTab, wire onSaved below */}
           </View>
         )}
       </View>
