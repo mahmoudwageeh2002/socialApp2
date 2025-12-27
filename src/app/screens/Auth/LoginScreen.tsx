@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -13,10 +13,16 @@ import { useTranslation } from 'react-i18next';
 import LogoSvg from '../../../assets/svgs/Logomark.svg';
 import GoogleSvg from '../../../assets/svgs/googleSvg.svg';
 import { useNavigation } from '@react-navigation/native';
+import useLogin from './hooks/useLogin';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 const LoginScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const passwordInputRef = useRef<TextInput>(null);
+  const { loading, error, loginWithEmail, loginWithGoogle } = useLogin();
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const handleEmailSubmit = () => {
     passwordInputRef.current?.focus();
   };
@@ -29,7 +35,11 @@ const LoginScreen = () => {
         <Text style={styles.title}>{t('auth.appName')}</Text>
 
         {/* Social buttons */}
-        <TouchableOpacity style={styles.socialButton}>
+        <TouchableOpacity
+          style={styles.socialButton}
+          onPress={loginWithGoogle}
+          disabled={loading}
+        >
           <GoogleSvg width={24} height={24} style={styles.socialIcon} />
           <Text style={styles.socialText}>{t('auth.loginWithGoogle')}</Text>
         </TouchableOpacity>
@@ -49,24 +59,48 @@ const LoginScreen = () => {
           keyboardType="email-address"
           autoCapitalize="none"
           returnKeyType="next"
+          onChangeText={setEmail}
           onSubmitEditing={handleEmailSubmit}
+          value={email}
         />
+        <TouchableOpacity
+          onPress={() => setShowPassword(!showPassword)}
+          style={styles.showPasswordButton}
+        >
+          <Icon
+            color={colors.textSecondary}
+            size={24}
+            name={showPassword ? 'eye-off' : 'eye'}
+          />
+        </TouchableOpacity>
         <TextInput
           style={styles.input}
           placeholder={t('auth.password')}
           placeholderTextColor={colors.textSecondary}
-          secureTextEntry
+          secureTextEntry={showPassword ? false : true}
+          onChangeText={setPassword}
           ref={passwordInputRef}
+          value={password}
+          // type="password"
         />
-
+        {/* Error */}
+        {error ? (
+          <Text style={{ color: 'red', marginBottom: 8 }}>{error}</Text>
+        ) : null}
         {/* Forgot password */}
         <TouchableOpacity style={styles.forgotBtn}>
           <Text style={styles.forgotText}>{t('auth.forgotPassword')}</Text>
         </TouchableOpacity>
 
         {/* Login button */}
-        <TouchableOpacity style={styles.loginBtn}>
-          <Text style={styles.loginText}>{t('auth.login')}</Text>
+        <TouchableOpacity
+          style={styles.loginBtn}
+          onPress={() => loginWithEmail(email, password)}
+          disabled={loading}
+        >
+          <Text style={styles.loginText}>
+            {loading ? t('common.loading') : t('auth.login')}
+          </Text>
         </TouchableOpacity>
 
         {/* Footer */}
@@ -171,6 +205,12 @@ const styles = StyleSheet.create({
   mainContainer: {
     backgroundColor: colors.background,
     paddingTop: 58,
+  },
+  showPasswordButton: {
+    position: 'absolute',
+    right: 45,
+    top: 318,
+    zIndex: 9999,
   },
 });
 

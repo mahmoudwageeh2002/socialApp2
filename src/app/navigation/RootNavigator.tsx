@@ -4,23 +4,29 @@ import { useEffect, useState } from 'react';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 import i18n, { loadSavedLanguage } from '../../localization/i18n';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import auth from '@react-native-firebase/auth';
 
 export default function RootNavigator() {
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     loadSavedLanguage(); // apply persisted language
-    const checkAuth = async () => {
-      // TODO: get token from secure storage / redux
-      const token = null;
-      setIsAuthenticated(!!token);
-    };
-    checkAuth();
+
+    // Sync with Firebase Auth state
+    const unsubscribe = auth().onAuthStateChanged(async user => {
+      const authed = !!user;
+      setIsAuthenticated(authed);
+      await AsyncStorage.setItem('isAuthenticated', authed ? 'true' : 'false');
+      console.log('Auth status:', authed);
+    });
+
+    return unsubscribe;
   }, []);
 
   return (
     <NavigationContainer>
-      {true ? <MainNavigator /> : <AuthNavigator />}
+      {isAuthenticated ? <MainNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );
 }

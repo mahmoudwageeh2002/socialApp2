@@ -14,11 +14,19 @@ import LogoSvg from '../../../assets/svgs/Logomark.svg';
 import GoogleSvg from '../../../assets/svgs/googleSvg.svg';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
+import useRegister from './hooks/useRegister';
 
 const RegisterScreen = () => {
   const { t } = useTranslation();
   const navigation = useNavigation();
+  const { loading, error, registerWithEmail, registerWithGoogle } =
+    useRegister();
+
   const [agree, setAgree] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
 
   const emailRef = useRef<TextInput>(null);
   const usernameRef = useRef<TextInput>(null);
@@ -35,12 +43,21 @@ const RegisterScreen = () => {
         <Text style={styles.title}>{t('auth.appName')}</Text>
 
         {/* Social buttons */}
-        <TouchableOpacity style={styles.socialButton}>
+        <TouchableOpacity
+          style={styles.socialButton}
+          onPress={registerWithGoogle}
+          disabled={loading}
+        >
           <GoogleSvg width={24} height={24} style={styles.socialIcon} />
           <Text style={styles.socialText}>{t('auth.signUpWithGoogle')}</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.socialButton}>
+        <TouchableOpacity
+          style={styles.socialButton}
+          onPress={() => {
+            /* optional email link flow */
+          }}
+          disabled={loading}
+        >
           <Icon
             name="email-outline"
             size={22}
@@ -63,6 +80,8 @@ const RegisterScreen = () => {
           placeholder={t('auth.name')}
           placeholderTextColor={colors.textSecondary}
           returnKeyType="next"
+          onChangeText={setName}
+          value={name}
           onSubmitEditing={() => emailRef.current?.focus()}
         />
         <TextInput
@@ -73,6 +92,8 @@ const RegisterScreen = () => {
           keyboardType="email-address"
           autoCapitalize="none"
           returnKeyType="next"
+          onChangeText={setEmail}
+          value={email}
           onSubmitEditing={() => usernameRef.current?.focus()}
         />
         <TextInput
@@ -82,6 +103,8 @@ const RegisterScreen = () => {
           placeholderTextColor={colors.textSecondary}
           autoCapitalize="none"
           returnKeyType="next"
+          onChangeText={setUsername}
+          value={username}
           onSubmitEditing={() => passwordRef.current?.focus()}
         />
         <TextInput
@@ -91,7 +114,14 @@ const RegisterScreen = () => {
           placeholderTextColor={colors.textSecondary}
           secureTextEntry
           returnKeyType="done"
+          onChangeText={setPassword}
+          value={password}
         />
+
+        {/* Error */}
+        {error ? (
+          <Text style={{ color: 'red', marginBottom: 8 }}>{error}</Text>
+        ) : null}
 
         {/* Terms */}
         <TouchableOpacity
@@ -110,9 +140,12 @@ const RegisterScreen = () => {
         {/* Continue */}
         <TouchableOpacity
           style={[styles.loginBtn, !agree && { opacity: 0.6 }]}
-          disabled={!agree}
+          disabled={!agree || loading}
+          onPress={() => registerWithEmail(email, password, name, username)}
         >
-          <Text style={styles.loginText}>{t('auth.continue')}</Text>
+          <Text style={styles.loginText}>
+            {loading ? t('common.loading') : t('auth.continue')}
+          </Text>
         </TouchableOpacity>
 
         {/* Footer */}

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react/no-unstable-nested-components */
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import HomeStack from './HomeStack';
@@ -8,10 +9,14 @@ import ProfileStack from './ProfileStack';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { colors } from '../../theme';
 import { useTranslation } from 'react-i18next';
+import useAuth from '../../hooks/useAuth';
+import { Image } from 'react-native';
 const Tab = createBottomTabNavigator();
 
 export default function BottomTabs() {
   const { t } = useTranslation();
+  const { appUser, loading, refresh } = useAuth();
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -51,9 +56,15 @@ export default function BottomTabs() {
         name={t('navigation.profile')}
         component={ProfileStack}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <AntDesign name="user" color={color} size={size} />
-          ),
+          tabBarIcon: ({ color, size }) =>
+            appUser?.imgUrl ? (
+              <Image
+                source={{ uri: appUser.imgUrl }}
+                style={{ width: size, height: size, borderRadius: size / 2 }}
+              />
+            ) : (
+              <AntDesign name="user" color={color} size={size} />
+            ),
         }}
       />
     </Tab.Navigator>
