@@ -21,7 +21,6 @@ export default function AccountTab({ data }: Props) {
       <Row label={t('profile.account.email')} value={data.email} />
       <Row label={t('profile.account.phone')} value={data.phone} />
       <Row label={t('profile.account.joined')} value={data.joined} />
-      <Row label={t('profile.account.plan')} value={data.plan} />
     </View>
   );
 }

@@ -1,38 +1,64 @@
-import React, { useMemo } from 'react';
-import { View, StyleSheet, FlatList } from 'react-native';
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import Header from '../../../components/common/Heeader';
 import PostCard from './components/PostCard';
 import { colors } from '../../../theme';
 import { spacing } from '../../../theme';
 import AddPost from './components/AddPost';
+import useAuth from '../../../hooks/useAuth';
+import firestore from '@react-native-firebase/firestore';
+import { PostDoc } from '../../../types/Post';
 
 export default function HomeScreen() {
-  // Demo data
-  const posts = useMemo(
-    () => [
-      {
-        id: '1',
-        authorName: 'Bessie Cooper',
-        authorTitle: 'Digital Marketer',
-        authorAvatar: 'https://placehold.co/100x100',
-        timeAgo: '7 hours ago',
-        content:
-          "In today's fast-paced, digitally driven world, digital marketing is not just a strategy; it's a necessity for businesses of all sizes. 📈",
-        likes: 270,
-      },
-      {
-        id: '2',
-        authorName: 'Daniel Brown',
-        authorTitle: 'Digital Marketer',
-        authorAvatar: 'https://placehold.co/100x100',
-        timeAgo: '1 hour ago',
-        content:
-          'Fantastic post! Your content always brings a smile to my face. Keep up the great work! 👏',
-        likes: 58,
-      },
-    ],
-    [],
-  );
+  const { appUser } = useAuth();
+  const [posts, setPosts] = useState<PostDoc[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Real-time listener
+  useEffect(() => {
+    const unsub = firestore()
+      .collection('posts')
+      .orderBy('createdAt', 'desc')
+      .onSnapshot(
+        snap => {
+          const list: PostDoc[] = [];
+          snap.forEach(doc => {
+            const data = doc.data() as PostDoc;
+            list.push({ ...data, id: doc.id });
+          });
+          setPosts(list);
+          console.log('Posts updated. Total:', posts);
+        },
+        err => {
+          console.warn('Posts listen failed:', err);
+        },
+      );
+    return unsub;
+  }, []);
+
+  const fetchOnce = useCallback(async () => {
+    try {
+      const snap = await firestore()
+        .collection('posts')
+        .orderBy('createdAt', 'desc')
+        .get();
+      const list: PostDoc[] = snap.docs.map(d => ({
+        ...(d.data() as PostDoc),
+        id: d.id,
+      }));
+      setPosts(list);
+    } catch (e) {
+      console.warn('Refresh posts failed:', e);
+    }
+  }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchOnce();
+    setRefreshing(false);
+  }, [fetchOnce]);
 
   return (
     <View style={styles.screen}>
@@ -40,10 +66,13 @@ export default function HomeScreen() {
       <FlatList
         data={posts}
         keyExtractor={item => item.id}
-        ListHeaderComponent={<AddPost />}
-        renderItem={({ item }) => <PostCard post={item} />}
+        ListHeaderComponent={<AddPost appUser={appUser} onPost={onRefresh} />}
+        renderItem={({ item }) => <PostCard post={item} appUser={appUser} />}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       />
     </View>
   );
