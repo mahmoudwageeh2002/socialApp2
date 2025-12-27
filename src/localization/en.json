@@ -57,7 +57,9 @@
       "chooseAvatar": "Choose an image for avatar",
       "fullName": "Full name",
       "username": "Username",
-      "bio": "Bio"
+      "bio": "Bio",
+      "saveChanges": "Save Changes",
+      "saved": "Saved!"
     },
     "account": {
       "email": "Email",
@@ -89,5 +91,10 @@
   },
   "notifications": {
     "title": "Notifications"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred. Please try again.",
+    "success": "Operation completed successfully."
   }
 }
