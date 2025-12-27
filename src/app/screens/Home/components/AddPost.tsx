@@ -67,7 +67,7 @@ export default function AddPost({ onPost, appUser }: Props) {
         userName: appUser.name,
         comments: [] as string[],
         tags: [] as string[],
-        saved: false,
+        saved: [] as string[],
         likesCount: 0, // NEW
         likedBy: [] as string[], // NEW
         createdAt: firestore.FieldValue.serverTimestamp(),

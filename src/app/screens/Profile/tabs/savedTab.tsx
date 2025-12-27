@@ -4,15 +4,17 @@ import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { colors, spacing, typography } from '../../../../theme';
 import PostCard from '../../Home/components/PostCard';
 import { PostDoc } from '../../../../types/Post';
+import useAuth from '../../../../hooks/useAuth';
 
 type Props = { posts: PostDoc[]; refresh: () => void };
 
 export default function SavedTab({ posts, refresh }: Props) {
+  const { appUser } = useAuth();
   return (
     <FlatList
       data={posts}
       keyExtractor={item => item.id}
-      renderItem={({ item }) => <PostCard post={item} />}
+      renderItem={({ item }) => <PostCard post={item} appUser={appUser} />}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} />}

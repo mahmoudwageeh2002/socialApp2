@@ -82,12 +82,19 @@
     "post": {
       "comment": "Comment",
       "likes": "Likes",
-      "addComment": "Add a comment..."
+      "addComment": "Add a comment...",
+      "reply": "Reply",
+      "comments": "Comments",
+      "viewMore": "View more comments",
+      "hideReplies": "Hide replies",
+      "replyingTo": "Reply to"
     }
   },
   "search": {
     "title": "Search",
-    "placeholder": "Search..."
+    "placeholder": "Search...",
+    "users": "Users",
+    "posts": "Posts"
   },
   "notifications": {
     "title": "Notifications"

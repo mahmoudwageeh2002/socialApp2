@@ -60,7 +60,8 @@ const ProfileScreen = () => {
     if (!appUser?.userId) return;
     const unsub = firestore()
       .collection('posts')
-      .where('saved', '==', true)
+      .where('saved', 'array-contains', appUser.userId)
+      .orderBy('createdAt', 'desc')
       .onSnapshot(
         snap => {
           const list: PostDoc[] = snap.docs.map(d => ({
@@ -96,7 +97,7 @@ const ProfileScreen = () => {
     try {
       const snap = await firestore()
         .collection('posts')
-        .where('saved', '==', true)
+        .where('saved', 'array-contains', appUser.userId)
         .orderBy('createdAt', 'desc')
         .get();
       const list: PostDoc[] = snap.docs.map(d => ({

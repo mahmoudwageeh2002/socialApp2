@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   View,
@@ -15,12 +16,24 @@ import { timeAgo } from '../../../../utils/timeAgo';
 import { PostDoc } from '../../../../types/Post';
 import firestore from '@react-native-firebase/firestore';
 import CommentsSheet from './CommentsSheet';
+import PostActionsSheet from './postactionsSheet';
 import { BottomSheetRef } from '../../../../components/common/BottomSheetComponent';
+import { useNavigation } from '@react-navigation/native';
 
-type Props = { post: PostDoc; appUser?: any };
-export default function PostCard({ post, appUser }: Props) {
+type Props = {
+  post: PostDoc;
+  appUser?: any;
+  openCommentsSheet?: boolean;
+  onCardPress?: () => void;
+};
+export default function PostCard({
+  post,
+  appUser,
+  openCommentsSheet = true,
+  onCardPress,
+}: Props) {
   const { t } = useTranslation();
-
+  const navigation = useNavigation<any>();
   // Derive initial like state from likedBy
   const initiallyLiked = useMemo(
     () =>
@@ -34,6 +47,7 @@ export default function PostCard({ post, appUser }: Props) {
     post.likesCount ?? post.likes ?? 0,
   );
   const commentSheetRef = useRef<BottomSheetRef | null>(null);
+  const actionsSheetRef = useRef<BottomSheetRef | null>(null);
 
   const handleLiked = useCallback(async () => {
     const uid = appUser?.userId;
@@ -67,7 +81,14 @@ export default function PostCard({ post, appUser }: Props) {
   }, [appUser?.userId, post.id, localLiked]);
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={
+        onCardPress
+          ? onCardPress
+          : () => navigation.navigate('PostDetailsScreen', { post: post })
+      }
+    >
       {/* Header */}
       <View style={styles.headerRow}>
         <Image source={{ uri: post.imgUrl }} style={styles.avatar} />
@@ -79,7 +100,10 @@ export default function PostCard({ post, appUser }: Props) {
           {post?.createdAtISO && (
             <Text style={styles.time}>{timeAgo(post?.createdAtISO)}</Text>
           )}
-          <TouchableOpacity style={styles.moreBtn}>
+          <TouchableOpacity
+            style={styles.moreBtn}
+            onPress={() => actionsSheetRef.current?.present()}
+          >
             <Icon
               name="dots-horizontal"
               size={20}
@@ -96,10 +120,15 @@ export default function PostCard({ post, appUser }: Props) {
       <View style={styles.actionsRow}>
         <TouchableOpacity
           style={styles.commentRow}
-          onPress={() => commentSheetRef?.current?.present()}
+          onPress={() => {
+            if (openCommentsSheet) {
+              commentSheetRef?.current?.present();
+            } else {
+            }
+          }}
         >
           <Icon name="comment-outline" size={20} color={colors.textSecondary} />
-          <Text style={styles.commentText}>{t('home.post.comment')}</Text>
+          <Text style={styles.commentText}>{t('home.post.comments')}</Text>
         </TouchableOpacity>
 
         <View style={styles.likesRow}>
@@ -110,7 +139,7 @@ export default function PostCard({ post, appUser }: Props) {
             <Icon
               name={localLiked ? 'thumb-up' : 'thumb-up-outline'}
               size={20}
-              color={localLiked ? colors.primary : colors.textSecondary}
+              color={localLiked ? colors.main : colors.textSecondary}
             />
           </TouchableOpacity>
         </View>
@@ -121,7 +150,15 @@ export default function PostCard({ post, appUser }: Props) {
         appUser={appUser}
         commentSheetRef={commentSheetRef}
       />
-    </View>
+      <PostActionsSheet
+        post={post}
+        appUser={appUser}
+        sheetRef={actionsSheetRef}
+        onDeleted={() => {
+          /* e.g., navigate back or refresh */
+        }}
+      />
+    </TouchableOpacity>
   );
 }
 
@@ -129,11 +166,13 @@ const AVATAR = 40;
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.card,
+    // backgroundColor: colors.card,
     paddingHorizontal: spacing.xxl,
     paddingTop: spacing.xxl,
     paddingBottom: spacing.lg,
     borderTopWidth: 1,
+    borderBottomColor: colors.border,
+    borderBottomWidth: 1,
     borderTopColor: colors.border,
   },
   headerRow: {
