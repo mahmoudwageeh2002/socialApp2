@@ -1,14 +1,14 @@
 /* eslint-disable react-native/no-inline-styles */
 import React from 'react';
-import { FlatList, RefreshControl, StyleSheet, View, Text } from 'react-native';
+import { FlatList, StyleSheet, View, Text } from 'react-native';
 import { colors, spacing, typography } from '../../../../theme';
 import PostCard from '../../Home/components/PostCard';
 import useAuth from '../../../../hooks/useAuth';
 import { PostDoc } from '../../../../types/Post';
 
-type Props = { posts: PostDoc[]; refresh: () => void };
+type Props = { posts: PostDoc[] };
 
-export default function PostsTab({ posts, refresh }: Props) {
+export default function PostsTab({ posts }: Props) {
   const { appUser } = useAuth();
 
   return (
@@ -18,7 +18,6 @@ export default function PostsTab({ posts, refresh }: Props) {
       renderItem={({ item }) => <PostCard post={item} appUser={appUser} />}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} />}
       ListEmptyComponent={
         <View
           style={{

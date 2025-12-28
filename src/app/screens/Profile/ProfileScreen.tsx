@@ -75,50 +75,59 @@ const ProfileScreen = () => {
     return unsub;
   }, [appUser?.userId]);
   // Optional manual refresh
-  const fetchMyPostsOnce = useCallback(async () => {
-    if (!appUser?.userId) return;
-    try {
-      const snap = await firestore()
-        .collection('posts')
-        .where('userId', '==', appUser.userId)
-        .orderBy('createdAt', 'desc')
-        .get();
-      const list: PostDoc[] = snap.docs.map(d => ({
-        ...(d.data() as PostDoc),
-        id: d.id,
-      }));
-      setMyPosts(list);
-    } catch (e) {
-      console.warn('Refresh posts failed:', e);
-    }
-  }, [appUser?.userId]);
-  const fetchSavedPosts = useCallback(async () => {
-    if (!appUser?.userId) return;
-    try {
-      const snap = await firestore()
-        .collection('posts')
-        .where('saved', 'array-contains', appUser.userId)
-        .orderBy('createdAt', 'desc')
-        .get();
-      const list: PostDoc[] = snap.docs.map(d => ({
-        ...(d.data() as PostDoc),
-        id: d.id,
-      }));
-      setSavedPosts(list);
-    } catch (e) {
-      console.warn('Refresh saved posts failed:', e);
-    }
-  }, [appUser?.userId]);
-  const onMyPostsRefresh = () => {
-    setRefreshing(true);
-    fetchMyPostsOnce();
-    setRefreshing(false);
-  };
-  const onSavedPostsRefresh = () => {
-    setRefreshing(true);
-    fetchSavedPosts();
-    setRefreshing(false);
-  };
+  // const fetchMyPostsOnce = useCallback(async () => {
+  //   if (!appUser?.userId) return;
+  //   try {
+  //     const snap = await firestore()
+  //       .collection('posts')
+  //       .where('userId', '==', appUser.userId)
+  //       .orderBy('createdAt', 'desc')
+  //       .get();
+  //     const list: PostDoc[] = snap.docs.map(d => ({
+  //       ...(d.data() as PostDoc),
+  //       id: d.id,
+  //     }));
+  //     setMyPosts(list);
+  //   } catch (e) {
+  //     console.warn('Refresh posts failed:', e);
+  //   }
+  // }, [appUser?.userId]);
+  // const fetchSavedPosts = useCallback(async () => {
+  //   if (!appUser?.userId) return;
+  //   try {
+  //     const snap = await firestore()
+  //       .collection('posts')
+  //       .where('saved', 'array-contains', appUser.userId)
+  //       .orderBy('createdAt', 'desc')
+  //       .get();
+  //     const list: PostDoc[] = snap.docs.map(d => ({
+  //       ...(d.data() as PostDoc),
+  //       id: d.id,
+  //     }));
+  //     console.log('Fetched saved posts:', list);
+
+  //     setSavedPosts(list);
+  //   } catch (e) {
+  //     console.warn('Refresh saved posts failed:', e);
+  //   }
+  // }, [appUser?.userId]);
+  // useEffect(() => {
+  //   fetchMyPostsOnce();
+  // }, [appUser?.userId]);
+  // useEffect(() => {
+  //   fetchSavedPosts();
+  // }, [appUser?.userId]);
+
+  // const onMyPostsRefresh = async () => {
+  //   setRefreshing(true);
+  //   await fetchMyPostsOnce();
+  //   setRefreshing(false);
+  // };
+  // const onSavedPostsRefresh = async () => {
+  //   setRefreshing(true);
+  //   await fetchSavedPosts();
+  //   setRefreshing(false);
+  // };
 
   const tabs: TabItem[] = [
     {
@@ -193,12 +202,8 @@ const ProfileScreen = () => {
         </View>
 
         <TabBar tabs={tabs} active={activeTab} setActive={setActiveTab} />
-        {activeTab === 'posts' && (
-          <PostsTab posts={myPosts} refresh={onMyPostsRefresh} />
-        )}
-        {activeTab === 'saved' && (
-          <SavedTab posts={savedPosts} refresh={onSavedPostsRefresh} />
-        )}
+        {activeTab === 'posts' && <PostsTab posts={myPosts} />}
+        {activeTab === 'saved' && <SavedTab posts={savedPosts} />}
         {activeTab === 'settings' && (
           <View style={styles.settingsWrapper}>
             <InnerSettings appUser={appUser} />

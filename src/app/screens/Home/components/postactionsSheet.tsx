@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useMemo } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
@@ -37,17 +38,31 @@ export default function PostActionsSheet({
     if (!appUser?.userId) return;
     try {
       const ref = firestore().collection('posts').doc(post.id);
-      if (isSaved) {
-        await ref.update({
-          saved: firestore.FieldValue.arrayRemove(appUser.userId),
-        });
-      } else {
-        await ref.update({
-          saved: firestore.FieldValue.arrayUnion(appUser.userId),
-        });
-      }
+
+      // Use a transaction to ensure atomic update
+      await firestore().runTransaction(async transaction => {
+        const postDoc = await transaction.get(ref);
+        if (!postDoc.exists) {
+          throw new Error('Post not found');
+        }
+
+        const currentSaved = postDoc.data()?.saved || [];
+        const isCurrentlySaved = currentSaved.includes(appUser.userId);
+
+        if (isCurrentlySaved) {
+          transaction.update(ref, {
+            saved: firestore.FieldValue.arrayRemove(appUser.userId),
+          });
+        } else {
+          transaction.update(ref, {
+            saved: firestore.FieldValue.arrayUnion(appUser.userId),
+          });
+        }
+      });
+
       sheetRef.current?.dismiss();
     } catch (e: any) {
+      console.error('Toggle save error:', e);
       Alert.alert('Error', e?.message ?? 'Failed to update save state');
     }
   };
@@ -73,12 +88,8 @@ export default function PostActionsSheet({
   };
 
   return (
-    <BottomSheetComponent
-      ref={sheetRef}
-      snapPoints={['auto']}
-      //   modalHeight={240}
-    >
-      <View style={styles.container}>
+    <BottomSheetComponent ref={sheetRef} snapPoints={['auto']}>
+      {/* <View style={styles.container}>
         <TouchableOpacity style={styles.actionBtn} onPress={toggleSave}>
           <Icon
             name={isSaved ? 'bookmark-remove' : 'bookmark-plus'}
@@ -99,6 +110,19 @@ export default function PostActionsSheet({
             </Text>
           </TouchableOpacity>
         ) : null}
+      </View> */}
+      <View style={styles.container}>
+        <Text
+          style={{
+            ...typography.body,
+            color: colors.textPrimary,
+            marginTop: spacing.md,
+            marginStart: 'auto',
+            marginEnd: 'auto',
+          }}
+        >
+          More Features Coming Soon
+        </Text>
       </View>
     </BottomSheetComponent>
   );

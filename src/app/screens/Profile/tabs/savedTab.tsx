@@ -1,14 +1,14 @@
 /* eslint-disable react-native/no-inline-styles */
 import React from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { colors, spacing, typography } from '../../../../theme';
 import PostCard from '../../Home/components/PostCard';
 import { PostDoc } from '../../../../types/Post';
 import useAuth from '../../../../hooks/useAuth';
 
-type Props = { posts: PostDoc[]; refresh: () => void };
+type Props = { posts: PostDoc[] };
 
-export default function SavedTab({ posts, refresh }: Props) {
+export default function SavedTab({ posts }: Props) {
   const { appUser } = useAuth();
   return (
     <FlatList
@@ -17,7 +17,6 @@ export default function SavedTab({ posts, refresh }: Props) {
       renderItem={({ item }) => <PostCard post={item} appUser={appUser} />}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
-      refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} />}
       ListEmptyComponent={
         <View
           style={{
@@ -34,7 +33,7 @@ export default function SavedTab({ posts, refresh }: Props) {
               textAlign: 'center',
             }}
           >
-            No saved posts yet.
+            Coming Soon.
           </Text>
         </View>
       }
