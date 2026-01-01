@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -14,72 +14,114 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Header from '../../../components/common/Heeader';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-type ChatItem = {
-  id: string;
-  name: string;
-  avatar: string;
-  preview: string;
-  online?: boolean;
+
+import useAuth from '../../../hooks/useAuth'; // <-- update path if needed
+import UserPickerSheet, {
+  UserPickerSheetRef,
+} from './components/UserPickerSheet';
+import { AppUserLite, ensureDmChat } from './services/chatService';
+import { useChatList } from './hooks/useChatList';
+
+type ChatRow = {
+  chatId: string;
+  otherUserId: string;
+  otherName: string;
+  otherImgUrl?: string;
+  lastText: string;
+  lastSenderId?: string;
 };
 
 export default function ChatListScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<any>();
-  const data = useMemo<ChatItem[]>(
-    () => [
-      {
-        id: '1',
-        name: 'Bessie Cooper',
-        avatar: 'https://placehold.co/100x100',
-        preview: t('chat.preview1'),
-        online: true,
-      },
-      {
-        id: '2',
-        name: 'Thomas Baker',
-        avatar: 'https://placehold.co/100x100',
-        preview: t('chat.preview2'),
-        online: false,
-      },
-      {
-        id: '3',
-        name: 'Daniel Brown',
-        avatar: 'https://placehold.co/100x100',
-        preview: t('chat.preview3'),
-        online: true,
-      },
-      {
-        id: '4',
-        name: 'Ronald Richards',
-        avatar: 'https://placehold.co/100x100',
-        preview: t('chat.preview4'),
-        online: true,
-      },
-      {
-        id: '5',
-        name: 'David Martinez',
-        avatar: 'https://placehold.co/100x100',
-        preview: t('chat.preview5'),
-        online: true,
-      },
-    ],
-    [],
+  const sheetRef = useRef<UserPickerSheetRef>(null);
+
+  const { appUser } = useAuth();
+  const me = appUser;
+
+  const myUid = me?.userId ?? '';
+
+  const myLite: AppUserLite = useMemo(
+    () => ({
+      userId: me?.userId ?? '',
+      name: me?.name ?? 'Me',
+      username: me?.username ?? '',
+      imgUrl: me?.imgUrl ?? '',
+    }),
+    [me],
   );
 
-  const renderItem = ({ item }: { item: ChatItem }) => (
-    <View style={styles.row}>
-      <View>
-        <Image source={{ uri: item.avatar }} style={styles.avatar} />
-        {item.online && <View style={styles.dot} />}
-      </View>
-      <View style={styles.center}>
-        <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.preview} numberOfLines={1}>
-          {item.preview}
-        </Text>
-      </View>
-    </View>
-  );
+  const { items, empty, loading } = useChatList(myUid);
+
+  const openPicker = () => sheetRef.current?.present();
+
+  const onPickUser = async (other: AppUserLite) => {
+    if (!myUid) return; // ✅ important
+    if (!other?.userId) return;
+    console.log('myUid:', myUid);
+    console.log('picked userId:', other?.userId);
+    const chatId = await ensureDmChat(myLite, other);
+
+    navigation.navigate('ChatStack', {
+      screen: 'Chat',
+      params: {
+        chatId,
+        otherUser: other,
+      },
+    });
+  };
+
+  const rows: ChatRow[] = items?.map(i => ({
+    chatId: i.chatId,
+    otherUserId: i.otherUserId,
+    otherName: i.otherName,
+    otherImgUrl: i.otherImgUrl,
+    lastText: i.lastText,
+    lastSenderId: i.lastSenderId,
+  }));
+
+  const renderItem = ({ item }: { item: ChatRow }) => {
+    const preview =
+      item.lastText?.length > 0
+        ? item.lastSenderId === myUid
+          ? `You: ${item.lastText}`
+          : item.lastText
+        : t('chat.newMessage');
+
+    return (
+      <TouchableOpacity
+        style={styles.row}
+        activeOpacity={0.85}
+        onPress={() => {
+          navigation.navigate('ChatStack', {
+            screen: 'Chat',
+            params: {
+              chatId: item.chatId,
+              otherUser: {
+                userId: item.otherUserId,
+                name: item.otherName,
+                username: '',
+                imgUrl: item.otherImgUrl ?? '',
+              },
+            },
+          });
+        }}
+      >
+        <View>
+          <Image
+            source={{ uri: item.otherImgUrl || 'https://placehold.co/100x100' }}
+            style={styles.avatar}
+          />
+        </View>
+        <View style={styles.center}>
+          <Text style={styles.name}>{item.otherName}</Text>
+          <Text style={styles.preview} numberOfLines={1}>
+            {preview}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <>
@@ -88,28 +130,48 @@ export default function ChatListScreen() {
         hasBackButton
         hasRightButton={false}
       />
+
       <View style={styles.screen}>
+        {/* Always show New Message button (your requirement) */}
         <TouchableOpacity
           style={styles.header}
-          onPress={() => {
-            navigation.navigate('ChatStack', {
-              screen: 'Chat',
-              params: { chatId: '1' },
-            });
-          }}
+          onPress={openPicker}
+          disabled={!myUid || loading}
         >
           <Icon name="pencil-outline" size={20} color={colors.textPrimary} />
-          <Text style={styles.headerTitle}>{t('chat.newMessage')}</Text>
+          <Text style={styles.headerTitle}>
+            {loading ? 'Loading...' : 'New message'}
+          </Text>
         </TouchableOpacity>
-        <FlatList
-          data={data}
-          // keyExtractor={i => i.id}
-          renderItem={renderItem}
-          // ItemSeparatorComponent={() => <View style={styles.separator} />}
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-        />
+
+        {/* If no chats: show only text; if chats: list them */}
+        {!empty ? (
+          <FlatList
+            data={rows}
+            keyExtractor={i => i.chatId}
+            renderItem={renderItem}
+            contentContainerStyle={styles.content}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <View style={{ padding: spacing.xxl }}>
+            <Text
+              style={{
+                ...typography.caption,
+                color: colors.textSecondary,
+                textAlign: 'center',
+              }}
+            >
+              {loading
+                ? 'Loading…'
+                : 'No chats yet. Tap “New message” to start.'}
+            </Text>
+          </View>
+        )}
       </View>
+
+      {/* Picker sheet */}
+      <UserPickerSheet ref={sheetRef} myUserId={myUid} onPick={onPickUser} />
     </>
   );
 }
@@ -144,17 +206,6 @@ const styles = StyleSheet.create({
     borderRadius: AVATAR / 2,
     backgroundColor: colors.border,
   },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.success,
-    position: 'absolute',
-    right: 2,
-    bottom: 2,
-    borderWidth: 2,
-    borderColor: colors.card,
-  },
   center: { flex: 1, marginLeft: spacing.lg },
   name: { ...typography.bodyBold, color: colors.textPrimary },
   preview: {
@@ -162,5 +213,4 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.xs,
   },
-  separator: { height: 1, backgroundColor: colors.border },
 });

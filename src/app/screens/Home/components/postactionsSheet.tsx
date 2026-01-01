@@ -26,7 +26,7 @@ export default function PostActionsSheet({
 }: Props) {
   const isSaved = useMemo(() => {
     const savedArr = Array.isArray(post.saved) ? post.saved : [];
-    return !!appUser?.userId && savedArr.includes(appUser.userId);
+    return !!appUser?.userId && savedArr.includes(appUser.userId as never);
   }, [post.saved, appUser?.userId]);
 
   const canDelete = useMemo(
@@ -88,7 +88,7 @@ export default function PostActionsSheet({
   };
 
   return (
-    <BottomSheetComponent ref={sheetRef} snapPoints={['auto']}>
+    <BottomSheetComponent snapPoints={['auto']} ref={sheetRef}>
       {/* <View style={styles.container}>
         <TouchableOpacity style={styles.actionBtn} onPress={toggleSave}>
           <Icon
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: spacing.xxl,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.lg,
+    // paddingBottom: spacing.lg,
   },
   actionBtn: {
     flexDirection: 'row',

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-native/no-inline-styles */
 import React, { useEffect, useRef, useState } from 'react';
 import {
   StyleSheet,
@@ -37,10 +37,13 @@ const SearchScreen = () => {
   const [searching, setSearching] = useState(false);
   const [users, setUsers] = useState<UserDoc[]>([]);
   const [posts, setPosts] = useState<PostDoc[]>([]);
-  const debounceRef = useRef<number | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
     const q = query.trim().toLowerCase();
     if (!q) {
       setUsers([]);
@@ -89,7 +92,12 @@ const SearchScreen = () => {
         setSearching(false);
       }
     }, 400);
-    return () => debounceRef.current && clearTimeout(debounceRef.current);
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+      }
+    };
   }, [query]);
 
   const sections: SectionListData<any>[] = [

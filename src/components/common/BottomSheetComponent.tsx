@@ -1,4 +1,3 @@
-/* eslint-disable react-native/no-inline-styles */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, {
   forwardRef,
@@ -30,7 +29,7 @@ export interface BottomSheetRef {
 }
 
 /* ---------- Props ---------- */
-interface BottomSheetProps {
+export interface BottomSheetProps {
   children: ReactNode;
   snapPoints?: (string | number)[];
   backgroundColor?: string;
@@ -39,7 +38,7 @@ interface BottomSheetProps {
   canClose?: boolean;
   onClose?: () => void;
   scrollable?: boolean;
-  Footer?: any;
+  Footer?: React.ComponentType<any> | React.ReactElement | undefined;
   TrueSheetScrollRef?: React.RefObject<any>;
   modalHeight?: number;
   showCloseIcon?: boolean;
@@ -59,7 +58,7 @@ const BottomSheetComponent = forwardRef<BottomSheetRef, BottomSheetProps>(
       canClose = true,
       onClose,
       scrollable = false,
-      Footer,
+      Footer, // can be a Component OR an Element
       TrueSheetScrollRef,
       modalHeight = Math.round(SCREEN_H * 0.85),
       showCloseIcon = true,
@@ -68,12 +67,12 @@ const BottomSheetComponent = forwardRef<BottomSheetRef, BottomSheetProps>(
     },
     ref,
   ) => {
-    const trueSheetRef = useRef<TrueSheet>(null);
-    const modalizeRef = useRef<Modalize>(null);
+    const trueSheetRef = useRef<TrueSheet | null>(null);
+    const modalizeRef = useRef<Modalize | null>(null);
 
     const snapPointsMemo = useMemo(() => snapPoints, [snapPoints]);
 
-    /* ---------- Footer normalization ---------- */
+    // Normalize Footer for iOS TrueSheet (expects a component)
     const TrueSheetFooter =
       typeof Footer === 'function'
         ? Footer
@@ -81,36 +80,37 @@ const BottomSheetComponent = forwardRef<BottomSheetRef, BottomSheetProps>(
         ? () => Footer
         : undefined;
 
+    // Helper to render Footer on Android
     const renderFooter = () => {
       if (!Footer) return null;
       return isValidElement(Footer) ? Footer : <Footer />;
     };
 
-    /* ---------- Exposed Methods ---------- */
     useImperativeHandle(ref, () => ({
       present: () => {
-        Platform.OS === 'ios'
-          ? trueSheetRef.current?.present()
-          : modalizeRef.current?.open();
+        if (Platform.OS === 'ios') {
+          trueSheetRef.current?.present();
+        } else {
+          modalizeRef.current?.open();
+        }
       },
       dismiss: () => {
-        Platform.OS === 'ios'
-          ? trueSheetRef.current?.dismiss()
-          : modalizeRef.current?.close();
+        if (Platform.OS === 'ios') {
+          trueSheetRef.current?.dismiss();
+        } else {
+          modalizeRef.current?.close();
+        }
       },
     }));
 
-    /* ---------- iOS ---------- */
     if (Platform.OS === 'ios') {
       return (
         <TrueSheet
           ref={trueSheetRef}
-          {...({
-            sizes: snapPointsMemo,
-          } as any)}
+          sizes={snapPointsMemo as any}
           backgroundColor={backgroundColor}
           dismissOnPanDown
-          FooterComponent={TrueSheetFooter}
+          FooterComponent={Footer as any}
           dimmed
           scrollRef={TrueSheetScrollRef}
           dimmedIndex={0.3}
@@ -124,7 +124,7 @@ const BottomSheetComponent = forwardRef<BottomSheetRef, BottomSheetProps>(
       );
     }
 
-    /* ---------- Android ---------- */
+    // ANDROID → Modalize with auto height and soft backdrop
     return (
       <Portal>
         <Modalize
@@ -133,12 +133,12 @@ const BottomSheetComponent = forwardRef<BottomSheetRef, BottomSheetProps>(
           handlePosition="inside"
           withHandle
           modalStyle={[styles.modalizeModal, { backgroundColor }]}
-          overlayStyle={styles.modalizeOverlay}
+          overlayStyle={styles.modalizeOverlay} // light shadow, not full black
           closeOnOverlayTap={canClose}
           withOverlay
           panGestureEnabled={!scrollable}
           onClosed={onClose}
-          FooterComponent={renderFooter()}
+          FooterComponent={renderFooter as any}
           scrollViewProps={{
             showsVerticalScrollIndicator: true,
             keyboardShouldPersistTaps: 'handled',
@@ -153,15 +153,14 @@ const BottomSheetComponent = forwardRef<BottomSheetRef, BottomSheetProps>(
           disableScrollIfPossible={false}
         >
           <View style={{ minHeight: 24 }}>
-            {scrollable && showCloseIcon && (
+            {scrollable && (
               <TouchableOpacity
                 style={styles.closeBtn}
-                onPress={() => modalizeRef.current?.close()}
+                onPress={modalizeRef.current?.close as any}
               >
                 <Icon name="close" size={24} color="black" />
               </TouchableOpacity>
             )}
-
             {children}
 
             <View style={{ height: 16 }} />
@@ -174,14 +173,13 @@ const BottomSheetComponent = forwardRef<BottomSheetRef, BottomSheetProps>(
 
 export default BottomSheetComponent;
 
-/* ---------- Styles ---------- */
 const styles = StyleSheet.create({
   sheetContainer: {
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
   },
   modalizeOverlay: {
-    backgroundColor: 'rgba(0,0,0,0.18)',
+    backgroundColor: 'rgba(0,0,0,0.18)', // softer shadow
   },
   modalizeModal: {
     borderTopLeftRadius: 16,

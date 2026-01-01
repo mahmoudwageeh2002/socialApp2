@@ -16,52 +16,74 @@ import { colors, spacing } from '../../../theme';
 import { typography } from '../../../theme/typography';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ChatBubble from './components/ChatBubble';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+
+import useAuth from '../../../hooks/useAuth'; // <-- update path
+import { useChat } from './hooks/useChat';
+
+function formatTime(ts: any) {
+  if (!ts) return '';
+  const d = ts?.toDate ? ts.toDate() : new Date();
+  const hh = `${d.getHours()}`.padStart(2, '0');
+  const mm = `${d.getMinutes()}`.padStart(2, '0');
+  return `${hh}:${mm}`;
+}
 
 export default function ChatScreen() {
   const { t } = useTranslation();
-  const [message, setMessage] = useState('');
   const navigation = useNavigation<any>();
-  const thread = useMemo(
-    () => [
-      {
-        id: 'm1',
-        side: 'left' as const,
-        title: 'Bessie',
-        subtitle: t('chat.roleMarketingManager'),
-        text: t('chat.message1'),
-        time: t('chat.time1245'),
-      },
-      {
-        id: 'm2',
-        side: 'right' as const,
-        text: t('chat.message2'),
-        time: t('chat.time1255'),
-      },
-      {
-        id: 'm3',
-        side: 'left' as const,
-        time: t('chat.time1255'),
-        audio: {
-          uri: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-          durationMs: 32000,
-        },
-      },
-    ],
-    [t],
-  );
+  const route = useRoute<any>();
 
-  const renderItem = ({ item }: any) => (
-    <ChatBubble
-      side={item.side}
-      title={item.title}
-      subtitle={item.subtitle}
-      text={item.text}
-      time={item.time}
-      audio={item.audio}
-    />
-  );
+  const { chatId, otherUser } = route.params as {
+    chatId: string;
+    otherUser?: {
+      userId: string;
+      name: string;
+      username?: string;
+      imgUrl?: string;
+    };
+  };
+
+  const { appUser } = useAuth();
+  const myUid = appUser?.userId ?? '';
+
+  const [message, setMessage] = useState('');
+  const { messages, onSend, sending } = useChat(chatId, myUid);
+
+  const headerName = otherUser?.name ?? 'Chat';
+
+  const renderItem = ({ item }: any) => {
+    const isRight = item.senderId === myUid;
+
+    return (
+      <ChatBubble
+        side={isRight ? 'right' : 'left'}
+        title={!isRight ? headerName : undefined}
+        subtitle={
+          !isRight
+            ? otherUser?.username
+              ? `@${otherUser.username}`
+              : undefined
+            : undefined
+        }
+        text={item.text}
+        time={formatTime(item.createdAt)}
+      />
+    );
+  };
+
+  const sendNow = async () => {
+    const tmsg = message.trim();
+    if (!tmsg) return;
+    setMessage('');
+    await onSend(tmsg);
+  };
+
+  const smallAvatarUri = useMemo(() => {
+    // show my avatar in input row if you want; or otherUser avatar — your choice
+    return appUser?.imgUrl || 'https://placehold.co/100x100';
+  }, [appUser?.imgUrl]);
 
   return (
     <View style={styles.screen}>
@@ -76,39 +98,29 @@ export default function ChatScreen() {
         </TouchableOpacity>
 
         <View style={styles.sideRow}>
-          <View style={styles.statusBadge}>
-            <Text style={styles.statusText}>{t('chat.online')}</Text>
-          </View>
-
-          <TouchableOpacity style={styles.moreBtn}>
-            <Icon
-              name="dots-horizontal"
-              size={20}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
+          <Text style={{ ...typography.bodyBold, color: colors.textPrimary }}>
+            {headerName}
+          </Text>
         </View>
       </View>
 
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0} // offset ≈ top bar height
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 10 : 0}
       >
         <FlatList
-          data={thread}
+          data={messages}
           keyExtractor={item => item.id}
           renderItem={renderItem}
+          inverted // because we query createdAt desc
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         />
 
         <View style={styles.inputRow}>
-          <Image
-            source={{ uri: 'https://placehold.co/100x100' }}
-            style={styles.smallAvatar}
-          />
+          <Image source={{ uri: smallAvatarUri }} style={styles.smallAvatar} />
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.input}
@@ -117,8 +129,14 @@ export default function ChatScreen() {
               value={message}
               onChangeText={setMessage}
               returnKeyType="send"
+              onSubmitEditing={sendNow}
             />
-            <TouchableOpacity style={styles.sendBtn} activeOpacity={0.9}>
+            <TouchableOpacity
+              style={styles.sendBtn}
+              activeOpacity={0.9}
+              onPress={sendNow}
+              disabled={sending}
+            >
               <Icon
                 name="send-outline"
                 size={20}
@@ -155,27 +173,12 @@ const styles = StyleSheet.create({
   },
   backRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   backText: { ...typography.body, color: colors.textPrimary },
-  statusBadge: {
-    paddingHorizontal: spacing.md,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.inputBackground,
-  },
-  statusText: { ...typography.captionBold, color: colors.textSecondary },
-  moreBtn: { padding: spacing.xs },
-  sideRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
+
+  sideRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
 
   listContent: {
     paddingTop: spacing.lg,
-    paddingBottom: spacing.xxl, // space above the input
+    paddingBottom: spacing.xxl,
   },
 
   inputRow: {
