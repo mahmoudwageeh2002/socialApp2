@@ -12,4 +12,6 @@ export const colors = {
   link: '#1D4ED8',
   success: '#22C55E',
   error: '#EF4444',
+  notification: '#EF4444',
+  onNotification: '#FFFFFF',
 };

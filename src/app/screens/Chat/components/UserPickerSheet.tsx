@@ -107,7 +107,6 @@ const UserPickerSheet = forwardRef<UserPickerSheetRef, Props>(
         scrollable
         showCloseIcon
         onClose={() => setQuery('')}
-        contentContainerStyle={{ paddingBottom: 16 }}
       >
         <View style={styles.header}>
           <Text style={styles.title}>{title}</Text>
@@ -175,6 +174,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: spacing.md,
+    marginHorizontal: 20,
+    marginTop: 10,
   },
   title: { ...typography.h4, color: colors.textPrimary },
   refreshBtn: {
@@ -199,6 +200,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     height: 44,
     marginBottom: spacing.md,
+    marginHorizontal: 20,
   },
   searchInput: { flex: 1, ...typography.body, color: colors.textPrimary },
 
@@ -209,6 +211,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    marginHorizontal: 20,
   },
   avatar: {
     width: AVATAR,

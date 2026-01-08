@@ -10,6 +10,7 @@ export type ChatListItem = {
   otherImgUrl?: string;
   lastText: string;
   lastSenderId?: string;
+  status?: 'sending' | 'sent' | 'delivered' | 'seen' | 'failed';
 };
 
 export function useChatList(myUserId: string) {
@@ -46,6 +47,7 @@ export function useChatList(myUserId: string) {
         otherImgUrl: otherInfo?.imgUrl ?? '',
         lastText: c.lastMessage?.text ?? '',
         lastSenderId: c.lastMessage?.senderId,
+        status: c?.status,
       };
     });
   }, [chats, myUserId]);

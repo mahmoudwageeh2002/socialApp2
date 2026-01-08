@@ -25,6 +25,8 @@
     "logIn": "Log In"
   },
   "chat": {
+    "replyingTo": "Replying to",
+    "you": "You",
     "chatsTitle": "Chats",
     "newMessage": "New Message",
     "back": "Back",

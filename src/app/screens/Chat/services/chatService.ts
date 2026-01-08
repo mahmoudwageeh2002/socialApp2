@@ -1,5 +1,5 @@
 // src/services/chatService.ts
-import firestore from '@react-native-firebase/firestore';
+import firestore, { Timestamp } from '@react-native-firebase/firestore';
 import { dmChatId } from './chatIds';
 
 export type AppUserLite = {
@@ -28,7 +28,31 @@ export type ChatDoc = {
     createdAt: any;
   } | null;
   lastMessageAt?: any;
-  createdAt?: any;
+  createdAt?: Timestamp;
+  status?: 'sending' | 'sent' | 'delivered' | 'seen' | 'failed';
+};
+
+export type Reaction = { userId: string; emoji: string; reactedAt: any };
+export type MessageStatus =
+  | 'sending'
+  | 'sent'
+  | 'delivered'
+  | 'seen'
+  | 'failed';
+
+export type ReplyTo = {
+  messageId: string;
+  senderId: string;
+  senderName?: string;
+  text?: string;
+};
+
+export type ChatMessagePayload = {
+  text: string;
+  senderId: string;
+  receiverId: string;
+  isReply?: boolean;
+  replyTo?: ReplyTo | null;
 };
 
 export type MessageDoc = {
@@ -37,6 +61,22 @@ export type MessageDoc = {
   text: string;
   senderId: string;
   createdAt: any;
+
+  deleted?: boolean;
+  deletedAt?: any;
+  deletedBy?: string;
+  clientId?: string; // ✅ add
+
+  reactions?: Reaction[];
+  status: MessageStatus;
+  deliveredTo?: Record<string, true>; // optional (group chat)
+  seenBy?: Record<string, true>; // optional (group chat)
+  deliveredAt?: Timestamp | null;
+  seenAt?: Timestamp | null;
+  toUserId: string; // ✅ add
+
+  isReply?: boolean;
+  replyTo?: ReplyTo | null;
 };
 
 const chatsCol = firestore().collection('chats');
@@ -160,25 +200,141 @@ export function subscribeMessages(
 }
 
 /** Send text message + update lastMessage on chat doc */
-export async function sendText(chatId: string, senderId: string, text: string) {
+// chatService.ts
+export async function sendText(
+  chatId: string,
+  senderId: string,
+  toUserId: string,
+  text: string,
+  clientId?: string,
+  replyTo?: ReplyTo | null,
+) {
   const t = text.trim();
-  if (!t) return;
+  if (!t) return null;
 
   const chatRef = chatsCol.doc(chatId);
-  const msgRef = chatRef.collection('messages').doc();
+  const id = clientId ?? firestore().collection('_ids').doc().id;
+  const msgRef = chatRef.collection('messages').doc(id);
+
+  const now = firestore.Timestamp.now(); // ✅ client timestamp
 
   const payload = {
     type: 'text' as const,
     text: t,
     senderId,
-    createdAt: firestore.FieldValue.serverTimestamp(),
+    toUserId,
+    clientId: id,
+    createdAt: now, // ✅ IMPORTANT (not serverTimestamp)
+    serverCreatedAt: firestore.FieldValue.serverTimestamp(), // optional
+    status: 'sent' as const,
+    deliveredAt: null,
+    seenAt: null,
+    isReply: replyTo ? true : false,
+    replyTo: replyTo ? replyTo : null,
   };
 
   await firestore().runTransaction(async tx => {
-    tx.set(msgRef, payload);
+    tx.set(msgRef, payload, { merge: false });
     tx.update(chatRef, {
       lastMessage: payload,
       lastMessageAt: firestore.FieldValue.serverTimestamp(),
     });
   });
+
+  return id;
+}
+
+export async function reactToMessage(
+  chatId: string,
+  messageId: string,
+  myUserId: string,
+  emoji: string,
+) {
+  const msgRef = chatsCol.doc(chatId).collection('messages').doc(messageId);
+
+  await firestore().runTransaction(async tx => {
+    const snap = await tx.get(msgRef);
+    if (!snap.exists) return;
+
+    const data = snap.data() as any;
+    if (data?.deleted) return;
+
+    const reactions: any[] = Array.isArray(data?.reactions)
+      ? [...data.reactions]
+      : [];
+    const idx = reactions.findIndex(r => r?.userId === myUserId);
+
+    const now = firestore.Timestamp.now();
+
+    if (idx >= 0) {
+      const current = reactions[idx];
+      if (current?.emoji === emoji) {
+        // same emoji again => remove
+        reactions.splice(idx, 1);
+      } else {
+        // different emoji => replace
+        reactions[idx] = { userId: myUserId, emoji, reactedAt: now };
+      }
+    } else {
+      // new reaction
+      reactions.push({ userId: myUserId, emoji, reactedAt: now });
+    }
+
+    tx.update(msgRef, { reactions });
+  });
+}
+export async function deleteMessage(
+  chatId: string,
+  messageId: string,
+  myUserId: string,
+) {
+  const msgRef = chatsCol.doc(chatId).collection('messages').doc(messageId);
+
+  await msgRef.update({
+    deleted: true,
+    deletedBy: myUserId,
+    deletedAt: firestore.FieldValue.serverTimestamp(),
+    text: '', // clear text
+    reactions: [], // optional: remove reactions too
+  });
+}
+// chatService.ts
+export async function markDelivered(
+  chatId: string,
+  myUid: string,
+  messageIds: string[],
+) {
+  if (!messageIds.length) return;
+
+  const batch = firestore().batch();
+  const msgsCol = chatsCol.doc(chatId).collection('messages');
+
+  messageIds.forEach(id => {
+    batch.update(msgsCol.doc(id), {
+      status: 'delivered',
+      deliveredAt: firestore.FieldValue.serverTimestamp(),
+    });
+  });
+
+  await batch.commit();
+}
+// chatService.ts
+export async function markSeen(chatId: string, myUid: string) {
+  const msgsSnap = await chatsCol
+    .doc(chatId)
+    .collection('messages')
+    .where('senderId', '!=', myUid)
+    .where('status', 'in', ['sent', 'delivered'])
+    .get();
+
+  if (msgsSnap.empty) return;
+
+  const batch = firestore().batch();
+  msgsSnap.docs.forEach(d => {
+    batch.update(d.ref, {
+      status: 'seen',
+      seenAt: firestore.FieldValue.serverTimestamp(),
+    });
+  });
+  await batch.commit();
 }

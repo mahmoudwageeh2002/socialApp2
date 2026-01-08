@@ -21,6 +21,8 @@ import UserPickerSheet, {
 } from './components/UserPickerSheet';
 import { AppUserLite, ensureDmChat } from './services/chatService';
 import { useChatList } from './hooks/useChatList';
+import { useUnreadCounts } from './hooks/useUnreadCounts';
+import { useDeliveredWatcher } from './hooks/useDeliveredWatcher';
 
 type ChatRow = {
   chatId: string;
@@ -29,6 +31,7 @@ type ChatRow = {
   otherImgUrl?: string;
   lastText: string;
   lastSenderId?: string;
+  status?: 'sending' | 'sent' | 'delivered' | 'seen' | 'failed';
 };
 
 export default function ChatListScreen() {
@@ -78,8 +81,10 @@ export default function ChatListScreen() {
     otherImgUrl: i.otherImgUrl,
     lastText: i.lastText,
     lastSenderId: i.lastSenderId,
+    status: i.status,
   }));
-
+  const chatIds = useMemo(() => rows.map(r => r.chatId), [rows]);
+  const unreadMap = useUnreadCounts(myUid, chatIds);
   const renderItem = ({ item }: { item: ChatRow }) => {
     const preview =
       item.lastText?.length > 0
@@ -87,6 +92,9 @@ export default function ChatListScreen() {
           ? `You: ${item.lastText}`
           : item.lastText
         : t('chat.newMessage');
+    // let numOfUnSeen = 0;
+
+    const unreadCount = unreadMap[item.chatId] ?? 0;
 
     return (
       <TouchableOpacity
@@ -118,11 +126,17 @@ export default function ChatListScreen() {
           <Text style={styles.preview} numberOfLines={1}>
             {preview}
           </Text>
+          {unreadCount > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{unreadCount}</Text>
+            </View>
+          )}
         </View>
       </TouchableOpacity>
     );
   };
 
+  useDeliveredWatcher(myUid, chatIds);
   return (
     <>
       <Header
@@ -148,7 +162,6 @@ export default function ChatListScreen() {
         {!empty ? (
           <FlatList
             data={rows}
-            keyExtractor={i => i.chatId}
             renderItem={renderItem}
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
@@ -212,5 +225,22 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSecondary,
     marginTop: spacing.xs,
+  },
+  badge: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    backgroundColor: colors.notification,
+    borderRadius: 12,
+    minWidth: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+  badgeText: {
+    ...typography.captionBold,
+    color: colors.onNotification,
+    fontSize: 12,
   },
 });
