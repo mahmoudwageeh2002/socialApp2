@@ -50,6 +50,8 @@ type Props = {
   status?: 'sending' | 'sent' | 'delivered' | 'seen' | 'failed';
   onPressFailed?: () => void; // ✅ add
 
+  myUid: string; // ✅ add
+
   isReply?: boolean;
   replyTo?: ReplyTo | null;
   onSwipeReply?: () => void;
@@ -69,6 +71,7 @@ export default function ChatBubble({
   hidden,
   compact,
   fullWidth = false,
+  myUid,
   isReply,
   replyTo,
   onSwipeReply,
@@ -153,6 +156,11 @@ export default function ChatBubble({
     !!replyTo &&
     (!!replyTo.text || !!replyTo.senderName);
 
+  const replySenderLabel =
+    replyTo?.senderId && myUid && replyTo.senderId === myUid
+      ? 'You'
+      : replyTo?.senderName ?? '';
+
   const content = (
     <View
       style={[
@@ -185,7 +193,7 @@ export default function ChatBubble({
                 ]}
               />
               <View style={styles.replyTextWrap}>
-                {!!replyTo?.senderName ? (
+                {!!replySenderLabel ? (
                   <Text
                     style={[
                       styles.replySnippetTitle,
@@ -193,7 +201,7 @@ export default function ChatBubble({
                     ]}
                     numberOfLines={1}
                   >
-                    {replyTo.senderName}
+                    {replySenderLabel}
                   </Text>
                 ) : null}
 

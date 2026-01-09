@@ -139,8 +139,8 @@ export default function ChatScreen() {
         reactionBadge={buildReactionBadge(item.reactions)}
         disableLongPress={deleted}
         hidden={hidden}
-        // NEW: reply rendering props (bubble will show it if exists)
-        isReply={!!item.isReply}
+        myUid={myUid}
+        isReply={!!item.replyTo}
         replyTo={item.replyTo}
         // NEW: swipe handler
         onSwipeReply={() => onSwipeToReply(item)}
@@ -292,6 +292,7 @@ export default function ChatScreen() {
           deleted: !!selected?.msg?.deleted,
           reactionBadge: buildReactionBadge(selected?.msg?.reactions),
           disableLongPress: true,
+          myUid: myUid,
         }}
         canCopy={!selected?.msg?.deleted && !!selected?.msg?.text}
         canDelete={!selected?.msg?.deleted}

@@ -1,6 +1,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+<uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+
+<!-- Android 12 and below -->
+<uses-permission
+  android:name="android.permission.READ_EXTERNAL_STORAGE"
+  android:maxSdkVersion="32" />
+  <!-- Record audio -->
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+<!-- Android 13+ read audio files -->
+<uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
 
     <application
       android:name=".MainApplication"
