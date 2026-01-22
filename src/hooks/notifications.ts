@@ -3,6 +3,7 @@ import messaging from '@react-native-firebase/messaging';
 import notifee, { AndroidImportance } from '@notifee/react-native';
 import { Platform } from 'react-native';
 import { request, RESULTS } from 'react-native-permissions';
+import firestore from '@react-native-firebase/firestore';
 
 export async function createDefaultChannel() {
   if (Platform.OS !== 'android') return;
@@ -66,4 +67,23 @@ export async function displayNotification(title: string, body: string) {
       importance: AndroidImportance.HIGH,
     },
   });
+}
+
+export async function syncFcmTokenToUser(userId: string) {
+  if (!userId) return;
+
+  const token = await messaging().getToken();
+  if (!token) return;
+
+  // store multiple tokens (multi-device)
+  await firestore()
+    .doc(`users/${userId}`)
+    .set(
+      {
+        fcmTokens: firestore.FieldValue.arrayUnion(token),
+      },
+      { merge: true },
+    );
+
+  return token;
 }

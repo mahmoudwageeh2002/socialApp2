@@ -22,6 +22,7 @@ import notifee, { AndroidImportance } from '@notifee/react-native';
 import {
   createDefaultChannel,
   requestUserPermission,
+  syncFcmTokenToUser,
 } from './src/hooks/notifications';
 import { addNotification } from './src/app/screens/Notifications/hooks/useNotifications';
 
@@ -41,7 +42,12 @@ const App = () => {
     createDefaultChannel();
 
     // ✅ request permission + token
-    requestUserPermission();
+    requestUserPermission().then(granted => {
+      if (granted) {
+        // ✅ save token so Cloud Function can notify others
+        syncFcmTokenToUser(myUid).catch(() => {});
+      }
+    });
 
     const unsubscribeMessage = messaging().onMessage(async remoteMessage => {
       const id =
@@ -71,15 +77,24 @@ const App = () => {
       });
     });
 
-    const unsubscribeToken = messaging().onTokenRefresh(token => {
+    const unsubscribeToken = messaging().onTokenRefresh(async token => {
       console.log('FCM token refreshed:', token);
+      if (!myUid) return;
+
+      // add refreshed token to Firestore
+      await firestore()
+        .doc(`users/${myUid}`)
+        .set(
+          { fcmTokens: firestore.FieldValue.arrayUnion(token) },
+          { merge: true },
+        );
     });
 
     return () => {
       unsubscribeMessage();
       unsubscribeToken();
     };
-  }, []);
+  }, [myUid]);
 
   if (!ready) return null;
 
