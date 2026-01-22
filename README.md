@@ -453,5 +453,3 @@ For issues or questions:
 - Email: support@yourapp.com
 
 ---
-
-**Built with ♥ by Your Name**
